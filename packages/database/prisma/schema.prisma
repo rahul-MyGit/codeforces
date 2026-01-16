@@ -1,0 +1,185 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+//generator zod {
+//  provider              = "zod-prisma"
+//  output                = "../src/zod"
+//  relationModel         = true
+//  modelCase             = "PascalCase"
+//  modelSuffix           = "Model"
+//  useDecimalJs          = true
+//  imports               = null
+//  prismaJsonNullability = true
+//}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id
+  name          String
+  email         String
+  emailVerified Boolean      @default(false)
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  isAdmin       Boolean      @default(false)
+  sessions      Session[]
+  accounts      Account[]
+  problems      Problems[]
+  submissions   Submission[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String   @unique
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Problems {
+  id               String             @id @default(uuid())
+  title            String
+  description      String
+  createdAt        DateTime           @default(now())
+  isDeleted        Boolean            @default(false)
+  problemType      ProblemType
+  tags             ProblemTag[]
+  cpuTimeLimit     Int
+  memoryTimeLimit  Int
+  visibleTestCases VisibleTestCases[]
+  hiddenTestCases  HiddenTestCases[]
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  submission       Submission[]
+}
+
+model Submission {
+  id            String         @id @default(uuid())
+  code          String?
+  language      Language       @default(CPP)
+  status        ProblemStatus  @default(UNSOLVED) //  should this be in problems table 
+  // no since my problems table contain userId which is of admin , better way ? , ask kirat
+  resultVerdict ResultVerdict?
+  problemId     String
+  problem       Problems       @relation(fields: [problemId], references: [id])
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+
+  @@unique([problemId, userId])
+}
+
+model VisibleTestCases {
+  id        String   @id @default(uuid())
+  input     String
+  output    String
+  problemId String
+  problem   Problems @relation(fields: [problemId], references: [id])
+}
+
+model HiddenTestCases {
+  id        String   @id @default(uuid())
+  input     String
+  output    String
+  problemId String
+  problem   Problems @relation(fields: [problemId], references: [id])
+}
+
+enum ResultVerdict {
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILATION_ERROR
+}
+
+enum ProblemType {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ProblemStatus {
+  SOLVED
+  ATTEMPTED
+  UNSOLVED
+}
+
+enum ProblemTag {
+  ARRAY
+  BINARY_SEARCH
+  DIVIDE_AND_CONQUER
+  DYNAMIC_PROGRAMMING
+  GREEDY
+  HASH_TABLE
+  LINKED_LIST
+  MATH
+  RECURSION
+  SLIDING_WINDOW
+  SORTING
+  STRING
+  TRIE
+  TWO_POINTERS
+}
+
+enum Language {
+  CPP
+  RUST
+  JAVASCRIPT
+  PYTHON
+  JAVA
+}

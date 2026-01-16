@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { Toaster } from "@repo/ui/components/sonner";
 import "@repo/ui/globals.css"
-import { Providers } from "../components/providers";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Providers } from "../components/providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <Toaster />
         <Providers>{children}</Providers>
       </body>
     </html>
