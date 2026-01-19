@@ -30,20 +30,17 @@ export const auth = betterAuth({
       expiresIn: 6000,
       async sendVerificationOTP({ email, otp, type }) {
         if (type == "sign-in") {
-          console.log("signin ")
           sendEmail({
             to: email,
             react: OtpTemplate({ otp }),
             subject: "sign-in with otp"
           })
         } else if (type == "email-verification") {
-          console.log("email email-verification")
           sendEmail({
             to: email,
             react: OtpTemplate({ otp }),
             subject: "email-verification Otp"
           })
-          console.log("email-verification");
         } else if (type == "forget-password") {
           console.log("forgot password")
           sendEmail({

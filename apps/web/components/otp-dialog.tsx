@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { toast } from "react-hot-toast";
 
 import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@repo/ui/components/dialog";
@@ -85,9 +86,24 @@ export function OTPDialog({ open, onOpenChange, email, onVerify }: OTPDialogProp
     onVerify(otpString)
   }
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setOtp(["", "", "", "", "", ""])
     setError("")
+
+    let actualOtp = "";
+    otp.forEach(x => {
+      actualOtp += x;
+    });
+
+    const { data, error } = await authClient.emailOtp.sendVerificationOtp({
+      email: email,
+      type: "sign-in",
+    });
+
+    if (!error) {
+      toast.success("sent otp again , please enter the otp");
+    }
+
     inputRefs.current[0]?.focus()
   }
 

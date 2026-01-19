@@ -14,3 +14,9 @@ export interface formData {
   agreeToTerms: boolean,
 }
 
+
+export interface signinFormData {
+  email: string,
+  password: string,
+  rememberMe: boolean,
+}

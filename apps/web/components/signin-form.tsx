@@ -13,8 +13,9 @@ import { Checkbox } from "@repo/ui/components/checkbox"
 import { Alert, AlertDescription } from "@repo/ui/components/alert"
 import { Code2, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react"
 import { useMutation } from "@tanstack/react-query"
-import { signupType } from "@repo/common/zodTypes"
 import { authClient } from "../lib/auth"
+import { signinFormData } from "../lib/types"
+import toast from "react-hot-toast"
 
 export function SignInForm() {
   const router = useRouter()
@@ -32,29 +33,20 @@ export function SignInForm() {
 
 
   const mutation = useMutation({
-    mutationFn: async (user: signinType) => {
-      {
-        const { data, error } = await authClient.signUp.email({
-          email: user.email,
-          password: user.password,
-          name: "nagmani",
-          image: "https://avatars.githubusercontent.com/u/163531400?v=4",
-        }, {
-          onSuccess: async (ctx) => {
-            const { data, error } = await authClient.emailOtp.sendVerificationOtp({
-              email: user.email,
-              type: "email-verification",
-            });
-          },
-          onError: (ctx) => {
-            console.log(ctx.error.message);
-          },
-        });
+    mutationFn: async (user: signinFormData) => {
+      const { data, error } = await authClient.signIn.email({
+        email: user.email,
+        password: user.password,
+        rememberMe: user.rememberMe,
+        callbackURL: "/problems",
+      });
+      if (error) {
+        toast.error("invalid email or password");
       }
     },
 
     onError: (error: any) => {
-      console.log(error);
+      toast.error("invalid email or password");
     },
   });
 
@@ -63,9 +55,7 @@ export function SignInForm() {
 
     setIsLoading(true)
     mutation.mutate(formData);
-    await new Promise((resolve) => setTimeout(resolve, 1500))
     setIsLoading(false)
-    router.push("/")
   }
 
   return (
@@ -105,9 +95,11 @@ export function SignInForm() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link href="#" className="text-sm text-primary hover:underline">
+                <Button variant={"link"} onClick={() => {
+                  alert("yet to implement")
+                }} className="text-sm text-primary hover:underline">
                   Forgot password?
-                </Link>
+                </Button >
               </div>
               <div className="relative">
                 <Input

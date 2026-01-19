@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Toaster } from "@repo/ui/components/sonner";
+import { Toaster } from "react-hot-toast";
 import "@repo/ui/globals.css"
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "../components/providers";
@@ -27,8 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Toaster />
-        <Providers>{children}</Providers>
+        <Providers>
+          <Toaster position="bottom-center" />
+          {children}
+        </Providers>
       </body>
     </html>
   );

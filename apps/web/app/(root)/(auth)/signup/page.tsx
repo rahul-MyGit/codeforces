@@ -1,9 +1,9 @@
 "use client"
 
-import { toast } from "sonner";
 import type React from "react"
 import { useState } from "react"
-import { signupSchema, signupType } from "@repo/common/zodTypes";
+import { toast } from "react-hot-toast";
+import { signupSchema } from "@repo/common/zodTypes";
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Code2, Eye, EyeOff, Loader2 } from "lucide-react"
@@ -33,7 +33,7 @@ export default function SignUpPage() {
 
   const mutation = useMutation({
     mutationFn: async (user: formData) => {
-      const { data, error } = await authClient.signUp.email({
+      await authClient.signUp.email({
         email: user.email,
         password: user.password,
         name: user.username,
@@ -46,15 +46,13 @@ export default function SignUpPage() {
           setShowOTPDialog(true)
         },
         onError: (ctx) => {
-          console.log(ctx.error.message);
-          toast.error("Something went wrong, please try again")
+          toast.error(ctx.error.message)
         },
       });
     },
 
     onError: (error: any) => {
-      console.log(error);
-      toast.error("error while completing the requst");
+      toast.error("Something went wrong please try again");
     },
   });
 
@@ -62,7 +60,6 @@ export default function SignUpPage() {
     e.preventDefault()
     const parsedValue = signupSchema.safeParse(formData);
     if (parsedValue.success) {
-      toast.success("hi");
       mutation.mutate(formData);
     } else {
       let errors: Record<string, string> = {};
