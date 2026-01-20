@@ -2,6 +2,7 @@ import { Navbar } from "../../../../components/navbar";
 import { cookies } from "next/headers";
 import { ProblemsFilters } from "../../../../components/problems-filters";
 import { ProblemsTable } from "../../../../components/problems-table";
+import { ProblemsSidebar } from "../../../../components/problems-sidebar";
 import { getAllTags, getProblems } from "../../../../lib/utils";
 import { Problem } from "../../../../lib/temp";
 
@@ -24,7 +25,7 @@ export default async function ProblemsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="container max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="relative mb-8 p-6 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 border border-primary/10 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent opacity-60" />
@@ -41,8 +42,15 @@ export default async function ProblemsPage() {
           <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-accent/10 rounded-full blur-3xl" />
         </div>
 
-        <ProblemsFilters allTags={tags.data} />
-        <ProblemsTable problems={newProblems} />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+          <div className="lg:col-span-3 space-y-6">
+            <ProblemsFilters allTags={tags.data} />
+            <ProblemsTable problems={newProblems} />
+          </div>
+          <div className="lg:col-span-1">
+            <ProblemsSidebar />
+          </div>
+        </div>
       </main>
     </div>
   )
