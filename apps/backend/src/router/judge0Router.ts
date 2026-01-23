@@ -73,8 +73,26 @@ judge0Router.post("/submit", async (req: Request, res: Response) => {
   }
 });
 
-judge0Router.get("/submission", (req: Request, res: Response) => {
+judge0Router.get("/submission", async (req: Request, res: Response) => {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+  if (!session) return unauthorized(res);
 
+  const tokens = req.query.tokens;
+  if (!tokens) return invalidInputs(res);
 
+  try {
+    const judge0Response = await axios.get(`${JUDGE0_BASE_URL}/submissions/batch?tokens=${tokens}`);
+    // store the result in DB; 
 
+    // might have to process the result first and give the user minimal response
+    res.json({
+      judge0Response
+    })
+  } catch (err) {
+    res.status(500).json({
+      msg: "something went wrong"
+    });
+  }
 });

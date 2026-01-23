@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input"
 import { Label } from "@repo/ui/components/label"
@@ -9,26 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@repo/ui/components/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
 import { Textarea } from "@repo/ui/components/textarea";
-import { X, Plus, Trash2, Eye, EyeOff } from "lucide-react"
+import { X, Plus, Trash2, Eye, EyeOff, Pencil, Lock, Loader2 } from "lucide-react"
 import { Navbar } from "../../../../components/navbar"
 import { MarkdownEditor } from "../../../../components/markdown-editor";
 
-const AVAILABLE_TAGS = [
-  "Array",
-  "Binary Search",
-  "Divide and Conquer",
-  "Dynamic Programming",
-  "Greedy",
-  "Hash Table",
-  "Linked List",
-  "Math",
-  "Recursion",
-  "Sliding Window",
-  "Sorting",
-  "String",
-  "Trie",
-  "Two Pointers",
-]
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001"
+
+interface ProblemTag {
+  id: string
+  title: string
+  fixed: boolean
+}
 
 interface TestCase {
   id: string
@@ -52,6 +43,136 @@ export default function CreateProblemPage() {
   const [memoryUnit, setMemoryUnit] = useState<"kb" | "mb">("mb")
   const [visibleTestCases, setVisibleTestCases] = useState<VisibleTestCase[]>([{ id: "1", input: "", output: "", explanation: "" }])
   const [hiddenTestCases, setHiddenTestCases] = useState<TestCase[]>([{ id: "1", input: "", output: "" }])
+
+  // Tags state
+  const [tags, setTags] = useState<ProblemTag[]>([])
+  const [isLoadingTags, setIsLoadingTags] = useState(true)
+  const [newTagInput, setNewTagInput] = useState("")
+  const [isAddingTag, setIsAddingTag] = useState(false)
+  const [editingTagId, setEditingTagId] = useState<string | null>(null)
+  const [editingTagValue, setEditingTagValue] = useState("")
+
+  // Fetch tags from backend on mount
+  useEffect(() => {
+    fetchTags()
+  }, [])
+
+  const fetchTags = async () => {
+    try {
+      setIsLoadingTags(true)
+      const response = await fetch(`${BACKEND_URL}/api/tags/getAll`, {
+        credentials: "include"
+      })
+      if (response.ok) {
+        const data = await response.json()
+        // Backend returns { allTags: [...] } with full tag objects
+        setTags(data.allTags || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch tags:", error)
+    } finally {
+      setIsLoadingTags(false)
+    }
+  }
+
+  const addTag = async () => {
+    const trimmedTag = newTagInput.trim()
+    if (!trimmedTag || tags.some(t => t.title === trimmedTag)) return
+
+    try {
+      setIsAddingTag(true)
+      const response = await fetch(`${BACKEND_URL}/api/tags/createTag`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ tag: trimmedTag })
+      })
+
+      if (response.ok) {
+        // Refresh tags from backend to get the new tag with its ID
+        await fetchTags()
+        setSelectedTags((prev) => [...prev, trimmedTag])
+        setNewTagInput("")
+      }
+    } catch (error) {
+      console.error("Failed to create tag:", error)
+    } finally {
+      setIsAddingTag(false)
+    }
+  }
+
+  const updateTag = async (tagId: string) => {
+    const trimmedValue = editingTagValue.trim()
+    if (!trimmedValue) return
+
+    const tag = tags.find(t => t.id === tagId)
+    if (!tag || tag.fixed) return
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/tags/updateTag/${tagId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ tag: trimmedValue })
+      })
+
+      if (response.ok) {
+        // Update selected tags if the old title was selected
+        if (selectedTags.includes(tag.title)) {
+          setSelectedTags(prev => prev.map(t => t === tag.title ? trimmedValue : t))
+        }
+        await fetchTags()
+      }
+    } catch (error) {
+      console.error("Failed to update tag:", error)
+    } finally {
+      setEditingTagId(null)
+      setEditingTagValue("")
+    }
+  }
+
+  const deleteTag = async (tagId: string) => {
+    const tag = tags.find(t => t.id === tagId)
+    if (!tag || tag.fixed) return
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/tags/deleteTag/${tagId}`, {
+        method: "DELETE",
+        credentials: "include"
+      })
+
+      if (response.ok) {
+        // Remove from selected tags
+        setSelectedTags(prev => prev.filter(t => t !== tag.title))
+        await fetchTags()
+      }
+    } catch (error) {
+      console.error("Failed to delete tag:", error)
+    }
+  }
+
+  const startEditing = (tag: ProblemTag) => {
+    if (tag.fixed) return
+    setEditingTagId(tag.id)
+    setEditingTagValue(tag.title)
+  }
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      addTag()
+    }
+  }
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, tagId: string) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      updateTag(tagId)
+    } else if (e.key === "Escape") {
+      setEditingTagId(null)
+      setEditingTagValue("")
+    }
+  }
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
@@ -127,7 +248,7 @@ export default function CreateProblemPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto py-8 px-4 max-w-4xl">
+      <main className="container mx-auto py-8 px-4 max-w-6xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Create Problem</h1>
           <p className="text-muted-foreground mt-2">Define a new coding problem with test cases and constraints</p>
@@ -171,22 +292,96 @@ export default function CreateProblemPage() {
           <Card>
             <CardHeader>
               <CardTitle>Tags</CardTitle>
-              <CardDescription>Select relevant tags for the problem</CardDescription>
+              <CardDescription>Select relevant tags for the problem. Fixed tags cannot be modified or deleted.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {AVAILABLE_TAGS.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={selectedTags.includes(tag) ? "default" : "outline"}
-                    className="cursor-pointer transition-colors"
-                    onClick={() => toggleTag(tag)}
-                  >
-                    {tag}
-                    {selectedTags.includes(tag) && <X className="ml-1 h-3 w-3" />}
-                  </Badge>
-                ))}
+            <CardContent className="space-y-4">
+              {isLoadingTags ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Loading tags...</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <div key={tag.id} className="group relative">
+                      {editingTagId === tag.id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            value={editingTagValue}
+                            onChange={(e) => setEditingTagValue(e.target.value)}
+                            onKeyDown={(e) => handleEditKeyDown(e, tag.id)}
+                            onBlur={() => updateTag(tag.id)}
+                            className="h-7 w-32 text-sm"
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <Badge
+                          variant={selectedTags.includes(tag.title) ? "default" : "outline"}
+                          className={`cursor-pointer transition-colors pr-1 ${!tag.fixed ? "border-dashed" : ""}`}
+                          onClick={() => toggleTag(tag.title)}
+                        >
+                          {tag.fixed && <Lock className="mr-1 h-3 w-3 opacity-50" />}
+                          {tag.title}
+                          {selectedTags.includes(tag.title) && <X className="ml-1 h-3 w-3" />}
+                          {!tag.fixed && (
+                            <span className="ml-1 hidden group-hover:inline-flex gap-0.5">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  startEditing(tag)
+                                }}
+                                className="p-0.5 hover:bg-muted rounded"
+                                title="Edit tag"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteTag(tag.id)
+                                }}
+                                className="p-0.5 hover:bg-destructive/20 rounded text-destructive"
+                                title="Delete tag"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </span>
+                          )}
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a new tag..."
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  className="flex-1"
+                  disabled={isAddingTag}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addTag}
+                  disabled={isAddingTag || !newTagInput.trim() || tags.some(t => t.title === newTagInput.trim())}
+                >
+                  {isAddingTag ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-1" />
+                  )}
+                  Add Tag
+                </Button>
               </div>
+              {selectedTags.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {selectedTags.length} tag{selectedTags.length !== 1 ? "s" : ""} selected
+                </p>
+              )}
             </CardContent>
           </Card>
 

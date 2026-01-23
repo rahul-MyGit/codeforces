@@ -65,3 +65,7 @@ export const submissionSchema = z.object({
   ]),
   code: z.string(),
 });
+
+export const tagsSchema = z.object({
+  tag: z.string()
+});

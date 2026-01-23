@@ -74,22 +74,65 @@ main();`,
 
 
 
-export const problemTags = [
-  { title: "Array" },
-  { title: "Binary Search" },
-  { title: "Divide and Conquer" },
-  { title: "Dynamic Programming" },
-  { title: "Greedy" },
-  { title: "Hash Table" },
-  { title: "Linked List" },
-  { title: "Math" },
-  { title: "Recursion" },
-  { title: "Sliding Window" },
-  { title: "Sorting" },
-  { title: "String" },
-  { title: "Trie" },
-  { title: "Two Pointers" },
-];
+export const problemTags =
+  [
+    {
+      title: "Array",
+      fixed: true
+    },
+    {
+      title: "Binary Search",
+      fixed: true
+    },
+    {
+      title: "Divide and Conquer",
+      fixed: true
+    },
+    {
+      title: "Dynamic Programming",
+      fixed: true
+    },
+    {
+      title: "Greedy",
+      fixed: true
+    },
+    {
+      title: "Hash Table",
+      fixed: true
+    },
+    {
+      title: "Linked List",
+      fixed: true
+    },
+    {
+      title: "Math",
+      fixed: true
+    },
+    {
+      title: "Recursion",
+      fixed: true
+    },
+    {
+      title: "Sliding Window",
+      fixed: true
+    },
+    {
+      title: "Sorting",
+      fixed: true
+    },
+    {
+      title: "String",
+      fixed: true
+    },
+    {
+      title: "Trie",
+      fixed: true
+    },
+    {
+      title: "Two Pointers",
+      fixed: true
+    }
+  ];
 
 export type ProblemSeed = {
   title: string;

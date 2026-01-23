@@ -18,7 +18,6 @@ export default async function sendEmailViaNodemailer({ to, subject, react }: Nod
 
   });
 
-  console.log("created transporter");
 
   return await transporter.sendMail({
     from: "noreply@example.com",

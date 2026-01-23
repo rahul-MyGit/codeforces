@@ -111,6 +111,7 @@ model Problems {
 model ProblemTag {
   id       String     @id @default(uuid())
   title    String     @unique
+  fixed    Boolean
   problems Problems[]
 }
 
