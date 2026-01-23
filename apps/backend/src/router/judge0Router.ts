@@ -1,15 +1,15 @@
 import { Router, Request, Response } from "express";
-import { auth } from "../util/auth";
-import { fromNodeHeaders } from "better-auth/node";
-import { invalidInputs, unauthorized } from "../util/lib";
+import { invalidInputs, languageTolanguageId, unauthorized } from "../util/lib";
 import prisma from "@repo/database/client";
 import { submissionSchema } from "@repo/common/zodTypes";
 import axios from "axios";
 import { JUDGE0_BASE_URL } from "../util/config";
+import { auth } from "../util/auth";
+import { fromNodeHeaders } from "better-auth/node";
 
 export const judge0Router: Router = Router();
 
-judge0Router.post("/submit/judge0", async (req: Request, res: Response) => {
+judge0Router.post("/submit", async (req: Request, res: Response) => {
   const session = await auth.api.getSession({
     headers: fromNodeHeaders(req.headers),
   });
@@ -37,29 +37,44 @@ judge0Router.post("/submit/judge0", async (req: Request, res: Response) => {
   });
 
   testCases?.hiddenTestCases.forEach(x => {
-    allTestCases.push(x);
-  })
+    allTestCases.push({
+      input: x.input,
+      output: x.output
+    });
+  });
 
   testCases?.visibleTestCases.forEach(x => {
-    allTestCases.push(x);
+    allTestCases.push({
+      input: x.input,
+      output: x.output
+    });
   });
+  const language_id = languageTolanguageId(language);
 
-  const judge0Response = await axios.post(`${JUDGE0_BASE_URL}/submissions/batch/?base64_encoded=false`, {
-    "submissions": [
-      {
-        "language_id": 46,
-        "source_code": "echo hello from Bash"
-      },
-      {
-        "language_id": 71,
-        "source_code": "print(\"hello from Python\")"
-      },
-      {
-        "language_id": 72,
-        "source_code": "puts(\"hello from Ruby\")"
-      }
-    ]
-  });
+  let newOne = allTestCases.map((x: any) => {
+    return {
+      language_id,
+      source_code: code,
+      stdin: x.input,
+      expected_output: x.output
+    }
+  })
+
+  try {
+    const judge0Response = await axios.post(`${JUDGE0_BASE_URL}/submissions/batch/?base64_encoded=false`, {
+      submissions: newOne
+    });
+
+    res.json(judge0Response.data);
+  } catch (err) {
+    res.status(500).json({
+      msg: "something went wrong"
+    });
+  }
+});
+
+judge0Router.get("/submission", (req: Request, res: Response) => {
+
 
 
 });

@@ -54,6 +54,14 @@ export const updateProblemSchema = z.object({
 
 export const submissionSchema = z.object({
   problemId: z.string(),
-  language: z.string(),
+  language: z.enum([
+    "CPP",
+    "JAVASCRIPT",
+    "TYPESCRIPT",
+    "RUST",
+    "GO",
+    "PYTHON",
+    "JAVA"
+  ]),
   code: z.string(),
 });

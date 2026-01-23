@@ -148,3 +148,31 @@ export async function getProblemsAuthenticated(page: number, userId: string) {
   return problems;
 
 }
+
+export function languageTolanguageId(language: string) {
+  switch (language) {
+    case "CPP":
+      return 54;
+
+    case "JAVASCRIPT":
+      return 63;
+
+    case "TYPESCRIPT":
+      return 74;
+
+    case "RUST":
+      return 73;
+
+    case "GO":
+      return 60;
+
+    case "PYTHON":
+      return 71;
+
+    case "JAVA":
+      return 62;
+
+    default:
+      throw new Error(`Unsupported language: ${language}`);
+  }
+}

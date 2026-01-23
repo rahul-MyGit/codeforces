@@ -1,10 +1,31 @@
 import prisma from "../src";
 import { problemTags, problemsData, starterCodes } from "./seedData";
 
-const ADMIN_USER_ID = "zqbH1efNyBxitiwAdJY3Rdo9br6qFGw4";
+const ADMIN_USER_ID = "yPKe9GTaKVW1og4y0XXsRqGgRmymSe3u";
 
 async function main() {
   console.log("🌱 Starting database seed...\n");
+
+  console.log("creating admin user");
+
+  const findUser = await prisma.user.findUnique({
+    where: {
+      id: ADMIN_USER_ID
+    }
+  });
+  if (!findUser) {
+    await prisma.user.create({
+      data: {
+        id: ADMIN_USER_ID,
+        name: "nagmani",
+        email: "nagmanipd3@gmail.com",
+        emailVerified: true,
+        image: "asdf",
+        isAdmin: true,
+      }
+    });
+  }
+
 
   console.log("📌 Seeding problem tags...");
   await prisma.problemTag.createMany({

@@ -23,3 +23,14 @@ services:
       - 1025:1025 # smtp server
       - 8025:8025 # web ui
 
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - 6379:6379 
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 10s
+      retries: 10 
+
