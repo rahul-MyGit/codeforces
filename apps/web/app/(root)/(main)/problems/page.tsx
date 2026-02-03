@@ -10,6 +10,7 @@ export default async function ProblemsPage() {
   const cookieStore = await cookies();
   const problems = await getProblems(1, cookieStore);
   const tags = await getAllTags();
+  const actualTags = tags.data.allTags.map((x: any) => x.title);
   const newProblems: Problem[] = problems.data.problems.map((x: any, index: number) => {
     return {
       id: x.id,
@@ -44,7 +45,7 @@ export default async function ProblemsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
           <div className="lg:col-span-3 space-y-6">
-            <ProblemsFilters allTags={tags.data} />
+            <ProblemsFilters allTags={actualTags} />
             <ProblemsTable problems={newProblems} />
           </div>
           <div className="lg:col-span-1">

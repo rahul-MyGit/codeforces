@@ -12,6 +12,11 @@ import { Textarea } from "@repo/ui/components/textarea";
 import { X, Plus, Trash2, Eye, EyeOff, Pencil, Lock, Loader2 } from "lucide-react"
 import { Navbar } from "../../../../components/navbar"
 import { MarkdownEditor } from "../../../../components/markdown-editor";
+import axios from "axios";
+import { BASE_URL } from "../../../../lib/config";
+import { toast } from "react-hot-toast";
+import { createProblemSchema } from "@repo/common/zodTypes";
+import { useRouter } from "next/navigation";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001"
 
@@ -32,6 +37,7 @@ interface VisibleTestCase extends TestCase {
 }
 
 export default function CreateProblemPage() {
+  const router = useRouter()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [problemType, setProblemType] = useState<string>("")
@@ -51,6 +57,10 @@ export default function CreateProblemPage() {
   const [isAddingTag, setIsAddingTag] = useState(false)
   const [editingTagId, setEditingTagId] = useState<string | null>(null)
   const [editingTagValue, setEditingTagValue] = useState("")
+
+  // Form submission state
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Fetch tags from backend on mount
   useEffect(() => {
@@ -225,24 +235,80 @@ export default function CreateProblemPage() {
     setConstraints((prev) => prev.map((c, i) => (i === index ? value : c)))
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setErrors({})
+
+    // Convert cpuTimeLimit to milliseconds (number)
+    const cpuTimeLimitMs = cpuTimeUnit === "s"
+      ? Number.parseFloat(cpuTimeLimit) * 1000
+      : Number.parseFloat(cpuTimeLimit)
+
+    // Convert memoryLimit to KB (number)
+    const memoryLimitKb = memoryUnit === "mb"
+      ? Number.parseFloat(memoryLimit) * 1024
+      : Number.parseFloat(memoryLimit)
+
+    // Build tags array with the format expected by schema
+    const selectedTagObjects = tags
+      .filter(t => selectedTags.includes(t.title))
+      .map(t => ({ title: t.title, fixed: t.fixed }))
+
     const problemData = {
       title,
       description,
-      problemType,
-      tags: selectedTags,
+      problemType: problemType.toUpperCase() as "EASY" | "MEDIUM" | "HARD",
+      tags: selectedTagObjects,
       constraints: constraints.filter(c => c.trim() !== ""),
-      cpuTimeLimit: { value: Number.parseFloat(cpuTimeLimit), unit: cpuTimeUnit },
-      memoryLimit: { value: Number.parseFloat(memoryLimit), unit: memoryUnit },
-      visibleTestCases: visibleTestCases.map(({ input, output, explanation }) => ({
+      cpuTimeLimit: cpuTimeLimitMs,
+      memoryTimeLimit: memoryLimitKb,
+      visibleTestCases: visibleTestCases.map(({ input, output }) => ({
         input,
         output,
-        explanation: explanation?.trim() || undefined
       })),
       hiddenTestCases: hiddenTestCases.map(({ input, output }) => ({ input, output })),
     }
-    console.log("Problem Data:", problemData)
-    // Here you would typically send this to your API
+
+    // Frontend validation using Zod
+    const parsedResult = createProblemSchema.safeParse(problemData)
+
+    if (!parsedResult.success) {
+      const fieldErrors: Record<string, string> = {}
+      const zodErrors = JSON.parse(parsedResult.error.message)
+      zodErrors.forEach((err: { path: string[], message: string }) => {
+        const fieldPath = err.path.join(".")
+        fieldErrors[fieldPath] = err.message
+      })
+      setErrors(fieldErrors)
+      toast.error("Please fix the validation errors")
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const response = await axios.post(
+        `${BASE_URL}/api/admin/problems/createProblem`,
+        problemData,
+        { withCredentials: true }
+      )
+
+      if (response.status === 201) {
+        toast.success("Problem created successfully!")
+        router.push("/problems")
+      }
+    } catch (err: any) {
+      console.error("Failed to create problem:", err)
+      if (err.response?.status === 401) {
+        toast.error("You must be logged in to create problems")
+      } else if (err.response?.status === 403) {
+        toast.error("Only admins can create problems")
+      } else if (err.response?.status === 400) {
+        toast.error("Invalid input data. Please check your form.")
+      } else {
+        toast.error("Failed to create problem. Please try again.")
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -270,6 +336,7 @@ export default function CreateProblemPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
+                {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
               </div>
 
               <div className="space-y-2">
@@ -284,6 +351,7 @@ export default function CreateProblemPage() {
                     <SelectItem value="hard">Hard</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.problemType && <p className="text-sm text-destructive">{errors.problemType}</p>}
               </div>
             </CardContent>
           </Card>
@@ -393,6 +461,7 @@ export default function CreateProblemPage() {
             </CardHeader>
             <CardContent>
               <MarkdownEditor value={description} onChange={setDescription} />
+              {errors.description && <p className="text-sm text-destructive mt-2">{errors.description}</p>}
             </CardContent>
           </Card>
 
@@ -425,6 +494,7 @@ export default function CreateProblemPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {errors.cpuTimeLimit && <p className="text-sm text-destructive">{errors.cpuTimeLimit}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -448,6 +518,7 @@ export default function CreateProblemPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {errors.memoryTimeLimit && <p className="text-sm text-destructive">{errors.memoryTimeLimit}</p>}
                 </div>
               </div>
             </CardContent>
@@ -547,8 +618,17 @@ export default function CreateProblemPage() {
 
           {/* Actions */}
           <div className="flex justify-end gap-4">
-            <Button variant="outline">Cancel</Button>
-            <Button onClick={handleSubmit}>Create Problem</Button>
+            <Button variant="outline" disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Problem...
+                </>
+              ) : (
+                "Create Problem"
+              )}
+            </Button>
           </div>
         </div>
       </main>

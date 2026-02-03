@@ -33,8 +33,16 @@ const testCases = z.object({
   output: z.string(),
 });
 
+const problemTags = z.object({
+  title: z.string(),
+  fixed: z.boolean(),
+})
+
 export const createProblemSchema = z.object({
   title: z.string(),
+  problemType: z.enum(["EASY", "MEDIUM", "HARD"]),
+  tags: z.array(problemTags),
+  constraints: z.array(z.string()),
   description: z.string(),
   cpuTimeLimit: z.number(),
   memoryTimeLimit: z.number(),
@@ -69,3 +77,5 @@ export const submissionSchema = z.object({
 export const tagsSchema = z.object({
   tag: z.string()
 });
+
+

@@ -4,6 +4,7 @@ import { auth } from "../util/auth";
 import { RelatedProblemsModel, RelatedProblemsModelOptional } from "@repo/database/zodTypes/problems";
 import { fromNodeHeaders } from "better-auth/node";
 import { invalidInputs, noProblemId, notAdmin, unauthorized } from "../util/lib";
+import { createProblemSchema } from "@repo/common/zodTypes";
 
 export const adminProblemRouter: Router = Router();
 
@@ -47,14 +48,20 @@ adminProblemRouter.post("/createProblem", async (req: Request, res: Response) =>
   if (!session) return unauthorized(res);
   if (!session.user.isAdmin) return notAdmin(res);
 
-  const parsedData = RelatedProblemsModel.safeParse(req.body);
+  const parsedData = createProblemSchema.safeParse(req.body);
   if (!parsedData.success) return invalidInputs(res);
 
-  const { title, description, cpuTimeLimit, memoryTimeLimit, visibleTestCases, hiddenTestCases } = parsedData.data;
+  const { title, problemType, tags, constraints, description, cpuTimeLimit, memoryTimeLimit, visibleTestCases, hiddenTestCases } = parsedData.data;
 
   await prisma.problems.create({
     data: {
       title,
+      problemType,
+      userId: session.user.id,
+      tags: {
+        connect: tags
+      },
+      constraints,
       description,
       cpuTimeLimit,
       memoryTimeLimit,
