@@ -94,15 +94,38 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
   try {
     const judge0Response = await axios.get(`${JUDGE0_BASE_URL}/submissions/batch?tokens=${tokens}`);
 
+    /*
     if (type == "submit") {
-      // store in db 
+      await prisma.submission.upsert({
+        where: {
+          userId: session.user.id,
+          problemId: "ASdf"
+        },
+        update: {
+code         
+language     
+status       
+resultVerdict
+problemId    
+userId
+        },
+        create: {
+code         
+language     
+status       
+resultVerdict
+problemId    
+userId
+        }
+      });
     }
+      
+      */
 
     res.json({
       judge0Response: judge0Response.data
     })
   } catch (err) {
-    console.log("error brother eww", err);
     res.status(500).json({
       msg: "something went wrong"
     });

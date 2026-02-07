@@ -15,6 +15,19 @@ export async function getProblems(page: number, cookieStore: any) {
   });
   return problems;
 }
+export async function getUser(cookieStore: any) {
+  const cookieHeader = Array.from(cookieStore._parsed.values())
+    .map(({ name, value }: any) => {
+      return `${name}=${encodeURIComponent(value)}`;
+    })
+    .join("; ");
+  const user = await axios.get(`${BASE_URL}/api/me`, {
+    headers: {
+      "cookie": cookieHeader
+    }
+  });
+  return user;
+}
 
 export async function getAllTags() {
   const allTags = axios.get(`${BASE_URL}/api/tags/getAll`);

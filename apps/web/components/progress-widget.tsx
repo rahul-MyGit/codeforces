@@ -1,141 +1,166 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card"
+import { Card, CardContent } from "@repo/ui/components/card"
 import { cn } from "@repo/ui/lib/utils"
+import { Check } from "lucide-react"
 
 export function ProgressWidget() {
-    // Mock data
     const stats = {
-        easy: { count: 45, total: 150, color: "#10b981" },   // emerald-500
-        medium: { count: 28, total: 300, color: "#f59e0b" }, // amber-500
-        hard: { count: 8, total: 100, color: "#ef4444" }     // red-500
+        easy: { solved: 5, total: 924 },
+        medium: { solved: 0, total: 2002 },
+        hard: { solved: 0, total: 906 },
     }
 
-    const totalSolved = stats.easy.count + stats.medium.count + stats.hard.count
+    const totalSolved = stats.easy.solved + stats.medium.solved + stats.hard.solved
     const totalProblems = stats.easy.total + stats.medium.total + stats.hard.total
+    const attempting = 2
 
-    // Calculate stroke dasharrays for the donut
-    // Circumference = 2 * pi * r
-    const radius = 50
+    // Gauge parameters
+    const size = 180
+    const center = size / 2
+    const radius = 70
+    const strokeWidth = 14
     const circumference = 2 * Math.PI * radius
 
-    // Start angles for segments (simple approximation for visual flair)
-    // Real implementation would calculate exact arc lengths based on percentage of total PROBLEMS or total SOLVED?
-    // LeetCode shows "Solved" vs "Total" for each category?
-    // Let's do a simple donut where we show relative proportions of solved types
+    // 270-degree arc (open at bottom)
+    const totalArc = circumference * 0.75
 
-    const easyRatio = stats.easy.count / totalSolved
-    const mediumRatio = stats.medium.count / totalSolved
-    const hardRatio = stats.hard.count / totalSolved
+    // Segment lengths proportional to each difficulty's total problems
+    const easyArc = (stats.easy.total / totalProblems) * totalArc
+    const hardArc = (stats.hard.total / totalProblems) * totalArc
+    const mediumArc = (stats.medium.total / totalProblems) * totalArc
 
-    // SVG adjustments
-    const size = 120
-    const strokeWidth = 8
-    const center = size / 2
+    // Rotation offsets — gauge starts at 135° (bottom-left)
+    const baseRotation = 135
+    const easyRotation = baseRotation
+    const hardRotation = baseRotation + (easyArc / circumference) * 360
+    const mediumRotation = hardRotation + (hardArc / circumference) * 360
+
+    const difficulties = [
+        {
+            label: "Easy",
+            solved: stats.easy.solved,
+            total: stats.easy.total,
+            borderColor: "border-l-amber-500",
+            textColor: "text-amber-500",
+        },
+        {
+            label: "Med.",
+            solved: stats.medium.solved,
+            total: stats.medium.total,
+            borderColor: "border-l-red-500",
+            textColor: "text-red-500",
+        },
+        {
+            label: "Hard",
+            solved: stats.hard.solved,
+            total: stats.hard.total,
+            borderColor: "border-l-teal-500",
+            textColor: "text-teal-500",
+        },
+    ]
 
     return (
         <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-2 bg-muted/20 border-b border-border/50">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <span className="h-4 w-4 bg-primary/20 text-primary rounded flex items-center justify-center text-[10px] font-bold">⚡</span>
-                    Progress
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-                <div className="flex gap-4 items-center">
-                    {/* Donut Chart */}
-                    <div className="relative flex-shrink-0">
-                        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
-                            {/* Background Circle */}
-                            <circle
-                                cx={center}
-                                cy={center}
-                                r={radius}
-                                fill="transparent"
-                                stroke="currentColor"
-                                strokeWidth={strokeWidth}
-                                className="text-muted/30"
-                            />
+            <CardContent className="p-5">
+                <div className="flex items-center gap-5">
+                    {/* Gauge */}
+                    <div className="flex-shrink-0">
+                        <div className="relative">
+                            <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                                {/* Background track */}
+                                <circle
+                                    cx={center}
+                                    cy={center}
+                                    r={radius}
+                                    fill="transparent"
+                                    stroke="currentColor"
+                                    strokeWidth={strokeWidth}
+                                    strokeDasharray={`${totalArc} ${circumference - totalArc}`}
+                                    strokeLinecap="round"
+                                    className="text-muted/30"
+                                    transform={`rotate(${baseRotation}, ${center}, ${center})`}
+                                />
 
-                            {/* Easy Segment */}
-                            <circle
-                                cx={center}
-                                cy={center}
-                                r={radius}
-                                fill="transparent"
-                                stroke={stats.easy.color}
-                                strokeWidth={strokeWidth}
-                                strokeDasharray={`${circumference * easyRatio} ${circumference}`}
-                                strokeDashoffset={0}
-                                strokeLinecap="round"
-                                className="transition-all duration-1000 ease-out"
-                            />
+                                {/* Easy segment (green) */}
+                                <circle
+                                    cx={center}
+                                    cy={center}
+                                    r={radius}
+                                    fill="transparent"
+                                    stroke="#10b981"
+                                    strokeWidth={strokeWidth}
+                                    strokeDasharray={`${easyArc} ${circumference - easyArc}`}
+                                    strokeLinecap="butt"
+                                    transform={`rotate(${easyRotation}, ${center}, ${center})`}
+                                />
 
-                            {/* Medium Segment */}
-                            <circle
-                                cx={center}
-                                cy={center}
-                                r={radius}
-                                fill="transparent"
-                                stroke={stats.medium.color}
-                                strokeWidth={strokeWidth}
-                                strokeDasharray={`${circumference * mediumRatio} ${circumference}`}
-                                strokeDashoffset={-1 * circumference * easyRatio}
-                                strokeLinecap="round"
-                                className="transition-all duration-1000 ease-out"
-                            />
+                                {/* Hard segment (red) */}
+                                <circle
+                                    cx={center}
+                                    cy={center}
+                                    r={radius}
+                                    fill="transparent"
+                                    stroke="#ef4444"
+                                    strokeWidth={strokeWidth}
+                                    strokeDasharray={`${hardArc} ${circumference - hardArc}`}
+                                    strokeLinecap="butt"
+                                    transform={`rotate(${hardRotation}, ${center}, ${center})`}
+                                />
 
-                            {/* Hard Segment */}
-                            <circle
-                                cx={center}
-                                cy={center}
-                                r={radius}
-                                fill="transparent"
-                                stroke={stats.hard.color}
-                                strokeWidth={strokeWidth}
-                                strokeDasharray={`${circumference * hardRatio} ${circumference}`}
-                                strokeDashoffset={-1 * circumference * (easyRatio + mediumRatio)}
-                                strokeLinecap="round"
-                                className="transition-all duration-1000 ease-out"
-                            />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span className="text-2xl font-bold tracking-tighter">{totalSolved}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase font-semibold">Solved</span>
+                                {/* Medium segment (amber) */}
+                                <circle
+                                    cx={center}
+                                    cy={center}
+                                    r={radius}
+                                    fill="transparent"
+                                    stroke="#f59e0b"
+                                    strokeWidth={strokeWidth}
+                                    strokeDasharray={`${mediumArc} ${circumference - mediumArc}`}
+                                    strokeLinecap="butt"
+                                    transform={`rotate(${mediumRotation}, ${center}, ${center})`}
+                                />
+                            </svg>
+
+                            {/* Center text */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <div>
+                                    <span className="text-3xl font-bold leading-none">{totalSolved}</span>
+                                    <span className="text-sm text-muted-foreground">/{totalProblems}</span>
+                                </div>
+                                <div className="flex items-center gap-1 mt-1 text-emerald-500">
+                                    <Check className="h-3.5 w-3.5" />
+                                    <span className="text-sm font-medium">Solved</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Attempting indicator */}
+                        <div className="flex items-center justify-center gap-1.5 mt-2">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                            <span className="text-xs text-muted-foreground">
+                                <span className="font-semibold text-foreground">{attempting}</span> Attempting
+                            </span>
                         </div>
                     </div>
 
-                    {/* Legend / Stats */}
-                    <div className="flex-1 space-y-3 min-w-0">
-                        <div className="space-y-1">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Easy</span>
-                                <span className="font-medium text-foreground">{stats.easy.count}</span>
+                    {/* Difficulty cards */}
+                    <div className="flex flex-col gap-2.5 min-w-0 flex-1">
+                        {difficulties.map((d) => (
+                            <div
+                                key={d.label}
+                                className={cn(
+                                    "border-l-[3px] rounded-r-md bg-muted/15 px-3 py-2.5",
+                                    d.borderColor
+                                )}
+                            >
+                                <div className="text-[11px] text-muted-foreground font-medium">{d.label}</div>
+                                <div className="text-base font-bold mt-0.5">
+                                    <span className={d.textColor}>{d.solved}</span>
+                                    <span className="text-muted-foreground font-normal text-sm">/{d.total}</span>
+                                </div>
                             </div>
-                            <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(stats.easy.count / stats.easy.total) * 100}%` }}></div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Medium</span>
-                                <span className="font-medium text-foreground">{stats.medium.count}</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(stats.medium.count / stats.medium.total) * 100}%` }}></div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Hard</span>
-                                <span className="font-medium text-foreground">{stats.hard.count}</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                                <div className="h-full bg-red-500 rounded-full" style={{ width: `${(stats.hard.count / stats.hard.total) * 100}%` }}></div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </CardContent>

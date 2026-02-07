@@ -3,13 +3,15 @@ import { cookies } from "next/headers";
 import { ProblemsFilters } from "../../../../components/problems-filters";
 import { ProblemsTable } from "../../../../components/problems-table";
 import { ProblemsSidebar } from "../../../../components/problems-sidebar";
-import { getAllTags, getProblems } from "../../../../lib/utils";
+import { getAllTags, getProblems, getUser } from "../../../../lib/utils";
 import { Problem } from "../../../../lib/temp";
 
 export default async function ProblemsPage() {
   const cookieStore = await cookies();
+  //INFO: had to send cookies since from server doesn't reach the backend
   const problems = await getProblems(1, cookieStore);
   const tags = await getAllTags();
+  const user = await getUser(cookieStore);
   const actualTags = tags.data.allTags.map((x: any) => x.title);
   const newProblems: Problem[] = problems.data.problems.map((x: any, index: number) => {
     return {
@@ -25,7 +27,7 @@ export default async function ProblemsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar user={user.data.user} />
       <main className="container max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="relative mb-8 p-6 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 border border-primary/10 overflow-hidden">
