@@ -96,7 +96,7 @@ export function TestCasesPanel({ testCases, activeTab, onTabChange, isRunning }:
           </TabsList>
         </div>
 
-        <TabsContent value="testcase" className="flex-1 m-0">
+        <TabsContent value="testcase" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
               {/* Test Case Selector */}
@@ -136,7 +136,7 @@ export function TestCasesPanel({ testCases, activeTab, onTabChange, isRunning }:
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="result" className="flex-1 m-0">
+        <TabsContent value="result" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
               {isRunning ? (

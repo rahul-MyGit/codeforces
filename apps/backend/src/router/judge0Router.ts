@@ -9,7 +9,7 @@ import { fromNodeHeaders } from "better-auth/node";
 
 export const judge0Router: Router = Router();
 
-judge0Router.post("/submit", async (req: Request, res: Response) => {
+judge0Router.post("/execute", async (req: Request, res: Response) => {
   const session = await auth.api.getSession({
     headers: fromNodeHeaders(req.headers),
   });
@@ -17,7 +17,7 @@ judge0Router.post("/submit", async (req: Request, res: Response) => {
 
   const parsedData = submissionSchema.safeParse(req.body);
   if (!parsedData.success) return invalidInputs(res);
-  const { problemId, code, language } = parsedData.data;
+  const { problemId, code, language, type } = parsedData.data;
 
   const testCases = await prisma.problems.findFirst({
     where: {
@@ -45,10 +45,17 @@ judge0Router.post("/submit", async (req: Request, res: Response) => {
     }
   });
 
-  const test = [
-    ...testCases?.hiddenTestCases!,
-    ...testCases?.visibleTestCases!,
-  ];
+  let test;
+  if (type == "run") {
+    test = [
+      ...testCases?.visibleTestCases!,
+    ];
+  } else {
+    test = [
+      ...testCases?.hiddenTestCases!,
+      ...testCases?.visibleTestCases!,
+    ];
+  }
 
   const language_id = languageTolanguageId(language);
 
@@ -81,14 +88,16 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
   if (!session) return unauthorized(res);
 
   const tokens = req.query.tokens;
-  if (!tokens) return invalidInputs(res);
+  const type = req.query.type;
+  if (!tokens || !type) return invalidInputs(res);
 
-  console.log("tokens", tokens);
   try {
     const judge0Response = await axios.get(`${JUDGE0_BASE_URL}/submissions/batch?tokens=${tokens}`);
-    // store the result in DB; 
 
-    // might have to process the result first and give the user minimal response
+    if (type == "submit") {
+      // store in db 
+    }
+
     res.json({
       judge0Response: judge0Response.data
     })

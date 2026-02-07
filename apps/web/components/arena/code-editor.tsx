@@ -31,11 +31,12 @@ const monacoLanguages: Record<Language, string> = {
 interface CodeEditorProps {
   code: string
   onChange: (value: string) => void
+  starterCode: any
   language: Language
   onLanguageChange: (lang: Language) => void
 }
 
-export function CodeEditor({ code, onChange, language, onLanguageChange }: CodeEditorProps) {
+export function CodeEditor({ code, onChange, starterCode, language, onLanguageChange }: CodeEditorProps) {
   const { theme } = useTheme()
 
   return (
@@ -53,7 +54,9 @@ export function CodeEditor({ code, onChange, language, onLanguageChange }: CodeE
             ))}
           </SelectContent>
         </Select>
-        <Button variant="ghost" size="sm" className="h-8 gap-1">
+        <Button onClick={() => {
+          onChange(starterCode[language]);
+        }} variant="ghost" size="sm" className="h-8 gap-1">
           <RotateCcw className="h-3 w-3" />
           Reset
         </Button>

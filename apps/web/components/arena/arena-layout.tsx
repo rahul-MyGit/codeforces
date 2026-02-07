@@ -9,6 +9,7 @@ import type { ProblemDetail, TestCase } from "../../lib/temp";
 import { ProblemDescription } from "./problem-description"
 import { CodeEditor } from "./code-editor"
 import { TestCasesPanel } from "./test-cases-panel"
+import { ProblemListDrawer } from "./problem-list-drawer"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui/resizable"
 import axios from "axios"
 import { BASE_URL } from "../../lib/config"
@@ -23,6 +24,7 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
   const [testCases, setTestCases] = useState<TestCase[]>(problem.testCases)
   const [isRunning, setIsRunning] = useState(false)
   const [activeTab, setActiveTab] = useState<"testcase" | "result">("testcase")
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const handleLanguageChange = (newLang: Language) => {
     setLanguage(newLang)
@@ -37,10 +39,11 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
       problemId: problem.id,
       code,
       language,
+      type,
     };
 
     try {
-      const tokens = await axios.post(`${BASE_URL}/api/judge0/submit`, submissionObj, {
+      const tokens = await axios.post(`${BASE_URL}/api/judge0/execute`, submissionObj, {
         withCredentials: true
       });
 
@@ -51,7 +54,7 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
       try {
         const poolResponse: any = await new Promise(async (resolve, regect) => {
           const interval = setInterval(async () => {
-            const result = await axios.get(`${BASE_URL}/api/judge0/submission?tokens=${actualTokens.substring(1)}`, { withCredentials: true });
+            const result = await axios.get(`${BASE_URL}/api/judge0/submission?tokens=${actualTokens.substring(1)}&type=${type}`, { withCredentials: true });
             const arr = result.data.judge0Response.submissions;
             const status = arr.find((x: any) => {
               if (x.status.id == 1 || x.status.id == 2) {
@@ -75,64 +78,11 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
   }
 
   const handleRun = async () => {
-    setIsRunning(true)
-    setActiveTab("result")
-
-    const submissionObj = {
-      problemId: problem.id,
-      code,
-      language,
-    };
-
-    try {
-      const tokens = await axios.post(`${BASE_URL}/api/judge0/submit`, submissionObj, {
-        withCredentials: true
-      });
-
-      let actualTokens = "";
-      tokens.data.forEach((x: any) => {
-        actualTokens += `,${x.token}`
-      });
-      try {
-        const poolResponse: any = await new Promise(async (resolve, regect) => {
-          const interval = setInterval(async () => {
-            const result = await axios.get(`${BASE_URL}/api/judge0/submission?tokens=${actualTokens.substring(1)}`, { withCredentials: true });
-            const arr = result.data.judge0Response.submissions;
-            const status = arr.find((x: any) => {
-              if (x.status.id == 1 || x.status.id == 2) {
-                return true;
-              }
-            });
-            if (!status) {
-              resolve(arr);
-              setIsRunning(false)
-              clearInterval(interval);
-            }
-          }, 1300);
-        });
-        const processResponse = processJudge0Response(poolResponse, problem.testCases);
-        setTestCases(processResponse);
-      } catch (err) {
-      }
-    } catch (err) {
-      console.log("error", err);
-    }
+    await handleRunFor("run");
   }
 
-  const handleSubmit = () => {
-    setIsRunning(true)
-    setActiveTab("result")
-    // Simulate submission
-    setTimeout(() => {
-      setTestCases((prev) =>
-        prev.map((tc) => ({
-          ...tc,
-          actualOutput: tc.expectedOutput,
-          status: "passed",
-        })),
-      )
-      setIsRunning(false)
-    }, 2000)
+  const handleSubmit = async () => {
+    await handleRunFor("submit");
   }
 
   const prevProblemId = String(Math.max(1, Number(problem.id) - 1))
@@ -143,11 +93,9 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
       {/* Top Navbar */}
       <header className="flex h-12 items-center justify-between border-b px-4">
         <div className="flex items-center gap-2">
-          <Link href="/problems">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <List className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDrawerOpen(true)}>
+            <List className="h-4 w-4" />
+          </Button>
           <Link href="/problems" className="flex items-center gap-2 font-semibold">
             <Code2 className="h-5 w-5 text-primary" />
             <span className="hidden sm:inline">CodeArena</span>
@@ -205,6 +153,7 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
                 <CodeEditor
                   code={code}
                   onChange={setCode}
+                  starterCode={problem.starterCode}
                   language={language}
                   onLanguageChange={handleLanguageChange}
                 />
@@ -225,6 +174,12 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      <ProblemListDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        currentProblemId={problem.id}
+      />
     </div>
   )
 }

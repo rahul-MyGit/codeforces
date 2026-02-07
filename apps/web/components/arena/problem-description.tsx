@@ -35,7 +35,7 @@ export function ProblemDescription({ problem }: { problem: ProblemDetail }) {
           </TabsList>
         </div>
 
-        <TabsContent value="description" className="flex-1 m-0">
+        <TabsContent value="description" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
               {/* Title and Difficulty */}
@@ -95,7 +95,7 @@ export function ProblemDescription({ problem }: { problem: ProblemDetail }) {
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="submissions" className="flex-1 m-0">
+        <TabsContent value="submissions" className="flex-1 m-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-4">
               <p className="text-sm text-muted-foreground">No submissions yet.</p>
