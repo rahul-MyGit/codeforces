@@ -27,14 +27,17 @@ export function noProblemId(res: Response) {
   });
 }
 
-export async function getProblemsUnauthenticated(page: number) {
+export async function getProblemsUnauthenticated(cursor: string | undefined) {
   let problems;
-  (page == 1) ?
+  (cursor) ?
     problems = await prisma.problems.findMany({
-      skip: 0,
-      take: 20,
+      skip: 1,
+      take: 15,
       orderBy: {
         createdAt: "desc"
+      },
+      cursor: {
+        id: cursor
       },
       where: {
         isDeleted: false
@@ -54,8 +57,8 @@ export async function getProblemsUnauthenticated(page: number) {
         userId: false
       }
     }) : problems = await prisma.problems.findMany({
-      take: 20,
-      skip: (page * 20) - 20,
+      take: 15,
+      skip: 0,
       orderBy: {
         createdAt: "desc"
       },
@@ -82,14 +85,17 @@ export async function getProblemsUnauthenticated(page: number) {
   return problems;
 }
 
-export async function getProblemsAuthenticated(page: number, userId: string) {
+export async function getProblemsAuthenticated(cursor: string | undefined, userId: string) {
   let problems;
-  (page == 1) ?
+  (cursor) ?
     problems = await prisma.problems.findMany({
-      skip: 0,
-      take: 20,
+      skip: 1,
+      take: 15,
       orderBy: {
         createdAt: "desc"
+      },
+      cursor: {
+        id: cursor
       },
       where: {
         isDeleted: false
@@ -115,8 +121,8 @@ export async function getProblemsAuthenticated(page: number, userId: string) {
         }
       }
     }) : problems = await prisma.problems.findMany({
-      take: 20,
-      skip: (page * 20) - 20,
+      take: 15,
+      skip: 0,
       orderBy: {
         createdAt: "desc"
       },
@@ -146,7 +152,6 @@ export async function getProblemsAuthenticated(page: number, userId: string) {
     });
 
   return problems;
-
 }
 
 export function languageTolanguageId(language: string) {

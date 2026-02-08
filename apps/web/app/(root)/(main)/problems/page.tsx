@@ -9,7 +9,7 @@ import { Problem } from "../../../../lib/temp";
 export default async function ProblemsPage() {
   const cookieStore = await cookies();
   //INFO: had to send cookies since from server doesn't reach the backend
-  const problems = await getProblems(1, cookieStore);
+  const problems = await getProblems(cookieStore);
   const tags = await getAllTags();
   const user = await getUser(cookieStore);
   const actualTags = tags.data.allTags.map((x: any) => x.title);

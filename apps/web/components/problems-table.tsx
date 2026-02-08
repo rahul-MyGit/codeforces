@@ -6,6 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@repo/ui/components/badge"
 import { cn } from "@repo/ui/lib/utils";
 import { Problem, useProblemsStore } from "../lib/temp";
+import { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { BASE_URL } from "../lib/config";
 
 // LeetCode-style difficulty configurations
 const difficultyConfig = {
@@ -49,8 +52,41 @@ export function ProblemsTable({ problems }: {
   problems: Problem[]
 }) {
   const { filters } = useProblemsStore()
+  const sentinelRef = useRef(null);
+  const [problemState, setProblemState] = useState<Problem[]>(problems);
+  async function fetchMore() {
+    const prob = await axios.get(`${BASE_URL}/api/user/problems?cursor=${problemState[problemState.length - 1]!.id}`, {
+      withCredentials: true
+    });
+    const newProblems: Problem[] = prob.data.problems.map((x: any, index: number) => {
+      return {
+        id: x.id,
+        serialNumber: problemState.length + index + 1,
+        title: x.title,
+        difficulty: x.problemType,
+        tags: x.tags.map((y: any) => y.title),
+        status: x.submission.length == 0 ? "UNSOLVED" : x.submission[0].status
+      }
+    });
+    setProblemState(prev => {
+      return [...prev, ...newProblems]
+    });
+  }
 
-  const filteredProblems = problems.filter((problem: Problem) => {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]!.isIntersecting) {
+          fetchMore();
+        }
+      },
+      { threshold: 1.0 }
+    );
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [problemState]);
+
+  const filteredProblems = problemState.filter((problem: Problem) => {
     if (filters.search && !problem.title.toLowerCase().includes(filters.search.toLowerCase())) {
       return false
     }
@@ -64,7 +100,7 @@ export function ProblemsTable({ problems }: {
       return false
     }
     return true
-  })
+  });
 
   return (
     <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
@@ -182,16 +218,18 @@ export function ProblemsTable({ problems }: {
           )}
         </TableBody>
       </Table>
-
+      <div ref={sentinelRef} />
       {/* Footer with problem count */}
-      {filteredProblems.length > 0 && (
-        <div className="px-6 py-4 border-t border-border/50 bg-muted/20">
-          <p className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{filteredProblems.length}</span> of{" "}
-            <span className="font-semibold text-foreground">{problems.length}</span> problems
-          </p>
-        </div>
-      )}
-    </div>
+      {
+        filteredProblems.length > 0 && (
+          <div className="px-6 py-4 border-t border-border/50 bg-muted/20">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-semibold text-foreground">{filteredProblems.length}</span> of{" "}
+              <span className="font-semibold text-foreground">{problemState.length}</span> problems
+            </p>
+          </div>
+        )
+      }
+    </div >
   )
 }

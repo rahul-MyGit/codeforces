@@ -8,16 +8,15 @@ export const userProblemRouter: Router = Router();
 
 userProblemRouter.get("/", async (req: Request, res: Response) => {
   let problems;
-  const page = Number(req.query.page);
+  const cursor = req.query.cursor as string | undefined;
 
   const session = await auth.api.getSession({
     headers: fromNodeHeaders(req.headers),
   });
-
   if (!session) {
-    problems = await getProblemsUnauthenticated(page);
+    problems = await getProblemsUnauthenticated(cursor);
   } else {
-    problems = await getProblemsAuthenticated(page, session.user.id);
+    problems = await getProblemsAuthenticated(cursor, session.user.id);
   }
   res.json({
     problems,
@@ -36,6 +35,9 @@ userProblemRouter.get("/problemsList/:id", async (req: Request, res: Response) =
     },
     cursor: {
       id: middleProblemId
+    },
+    where: {
+      isDeleted: false
     },
     skip: 0,
     take: 20,
@@ -59,7 +61,9 @@ userProblemRouter.get("/problemsList/:id", async (req: Request, res: Response) =
     orderBy: {
       createdAt: "desc"
     },
-
+    where: {
+      isDeleted: false
+    },
     select: {
       id: true,
       title: false,
@@ -93,69 +97,6 @@ userProblemRouter.get("/problemsList/:id", async (req: Request, res: Response) =
     problems: finalArr,
     index
   })
-
-  /*
-  const [problemsBefore, problemsAfter] = await prisma.$transaction([
-    prisma.problems.findMany({
-      cursor: {
-        id: middleProblemId
-      },
-      take: 50,
-      orderBy: {
-        createdAt: "desc"
-      },
-      select: {
-        id: true,
-        title: false,
-        problemType: false,
-        tags: false,
-        description: false,
-        createdAt: false,
-        isDeleted: false,
-        cpuTimeLimit: false,
-        memoryTimeLimit: false,
-        visibleTestCases: false,
-        hiddenTestCases: false,
-        userId: false
-      }
-    }),
-    prisma.problems.findMany({
-      cursor: {
-        id: middleProblemId
-      },
-      skip: 1,
-      take: - 50,
-      orderBy: {
-        createdAt: "desc"
-      },
-      select: {
-        id: true,
-        title: false,
-        problemType: false,
-        tags: false,
-        description: false,
-        createdAt: false,
-        isDeleted: false,
-        cpuTimeLimit: false,
-        memoryTimeLimit: false,
-        visibleTestCases: false,
-        hiddenTestCases: false,
-        userId: false
-      }
-    })
-  ]);
-
-  const finalArrBefore = problemsBefore.map(x => {
-    return x.id
-  });
-
-  const finalArrAfter = problemsAfter.map(x => {
-    return x.id
-  });
-  res.json({
-    problems: [...finalArrBefore, ...finalArrAfter]
-  });
-    */
 });
 
 userProblemRouter.get("/:problemId", async (req: Request, res: Response) => {
