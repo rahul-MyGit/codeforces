@@ -1,6 +1,6 @@
 import prisma from "@repo/database/client";
 import { Router, Request, Response } from "express";
-import { getProblemsAuthenticated, getProblemsUnauthenticated, noProblemId } from "../util/lib";
+import { getProblemsAuthenticated, getProblemsUnauthenticated, invalidInputs, noProblemId } from "../util/lib";
 import { auth } from "../util/auth";
 import { fromNodeHeaders } from "better-auth/node";
 
@@ -26,6 +26,137 @@ userProblemRouter.get("/", async (req: Request, res: Response) => {
 
 });
 
+userProblemRouter.get("/problemsList/:id", async (req: Request, res: Response) => {
+  const middleProblemId = req.params.id as string;
+  if (!middleProblemId) return invalidInputs(res);
+
+  const problemsAfter = await prisma.problems.findMany({
+    orderBy: {
+      createdAt: "desc"
+    },
+    cursor: {
+      id: middleProblemId
+    },
+    skip: 0,
+    take: 20,
+    select: {
+      id: true,
+      title: false,
+      problemType: false,
+      tags: false,
+      description: false,
+      createdAt: false,
+      isDeleted: false,
+      cpuTimeLimit: false,
+      memoryTimeLimit: false,
+      visibleTestCases: false,
+      hiddenTestCases: false,
+      userId: false
+    }
+  });
+
+  const problemsBefore = await prisma.problems.findMany({
+    orderBy: {
+      createdAt: "desc"
+    },
+
+    select: {
+      id: true,
+      title: false,
+      problemType: false,
+      tags: false,
+      description: false,
+      createdAt: false,
+      isDeleted: false,
+      cpuTimeLimit: false,
+      memoryTimeLimit: false,
+      visibleTestCases: false,
+      hiddenTestCases: false,
+      userId: false
+    },
+    cursor: {
+      id: middleProblemId
+    },
+    skip: 1,
+    take: -20
+  });
+  const newProblems = problemsAfter.map(x => {
+    return x.id
+  });
+
+  const newProblemsBefore = problemsBefore.map(x => {
+    return x.id
+  });
+  const finalArr = [...newProblemsBefore, ...newProblems];
+  const index = finalArr.findIndex(x => x == middleProblemId);
+  res.json({
+    problems: finalArr,
+    index
+  })
+
+  /*
+  const [problemsBefore, problemsAfter] = await prisma.$transaction([
+    prisma.problems.findMany({
+      cursor: {
+        id: middleProblemId
+      },
+      take: 50,
+      orderBy: {
+        createdAt: "desc"
+      },
+      select: {
+        id: true,
+        title: false,
+        problemType: false,
+        tags: false,
+        description: false,
+        createdAt: false,
+        isDeleted: false,
+        cpuTimeLimit: false,
+        memoryTimeLimit: false,
+        visibleTestCases: false,
+        hiddenTestCases: false,
+        userId: false
+      }
+    }),
+    prisma.problems.findMany({
+      cursor: {
+        id: middleProblemId
+      },
+      skip: 1,
+      take: - 50,
+      orderBy: {
+        createdAt: "desc"
+      },
+      select: {
+        id: true,
+        title: false,
+        problemType: false,
+        tags: false,
+        description: false,
+        createdAt: false,
+        isDeleted: false,
+        cpuTimeLimit: false,
+        memoryTimeLimit: false,
+        visibleTestCases: false,
+        hiddenTestCases: false,
+        userId: false
+      }
+    })
+  ]);
+
+  const finalArrBefore = problemsBefore.map(x => {
+    return x.id
+  });
+
+  const finalArrAfter = problemsAfter.map(x => {
+    return x.id
+  });
+  res.json({
+    problems: [...finalArrBefore, ...finalArrAfter]
+  });
+    */
+});
 
 userProblemRouter.get("/:problemId", async (req: Request, res: Response) => {
   const problemId = req.params.problemId as string;

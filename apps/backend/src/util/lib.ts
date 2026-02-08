@@ -32,7 +32,7 @@ export async function getProblemsUnauthenticated(page: number) {
   (page == 1) ?
     problems = await prisma.problems.findMany({
       skip: 0,
-      take: 10,
+      take: 20,
       orderBy: {
         createdAt: "desc"
       },
@@ -54,8 +54,8 @@ export async function getProblemsUnauthenticated(page: number) {
         userId: false
       }
     }) : problems = await prisma.problems.findMany({
-      take: 10,
-      skip: (page * 10) - 10,
+      take: 20,
+      skip: (page * 20) - 20,
       orderBy: {
         createdAt: "desc"
       },
@@ -87,7 +87,7 @@ export async function getProblemsAuthenticated(page: number, userId: string) {
   (page == 1) ?
     problems = await prisma.problems.findMany({
       skip: 0,
-      take: 10,
+      take: 20,
       orderBy: {
         createdAt: "desc"
       },
@@ -115,8 +115,8 @@ export async function getProblemsAuthenticated(page: number, userId: string) {
         }
       }
     }) : problems = await prisma.problems.findMany({
-      take: 10,
-      skip: (page * 10) - 10,
+      take: 20,
+      skip: (page * 20) - 20,
       orderBy: {
         createdAt: "desc"
       },

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Code2, Moon, Sun, List } from "lucide-react"
+import { ChevronLeft, ChevronRight, Code2, Moon, Sun, List, User, LogOut, Settings } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@repo/ui/components/button"
 import type { ProblemDetail, TestCase } from "../../lib/temp";
@@ -11,13 +11,23 @@ import { CodeEditor } from "./code-editor"
 import { TestCasesPanel } from "./test-cases-panel"
 import { ProblemListDrawer } from "./problem-list-drawer"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui/resizable"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@repo/ui/components/dropdown-menu"
 import axios from "axios"
 import { BASE_URL } from "../../lib/config"
 import { processJudge0Response } from "../../lib/utils"
+import { useRouter } from "next/navigation"
 
 type Language = "CPP" | "PYTHON" | "JAVA" | "JAVASCRIPT" | "TYPESCRIPT" | "GO" | "RUST";
 
-export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
+export function ArenaLayout({ problem, problemIdList, index, user }: { problem: ProblemDetail, problemIdList: string[], index: number, user: any }) {
   const { theme, setTheme } = useTheme()
   const [language, setLanguage] = useState<Language>("CPP")
   const [code, setCode] = useState(problem.starterCode.CPP)
@@ -25,6 +35,8 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
   const [isRunning, setIsRunning] = useState(false)
   const [activeTab, setActiveTab] = useState<"testcase" | "result">("testcase")
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const router = useRouter();
+
 
   const handleLanguageChange = (newLang: Language) => {
     setLanguage(newLang)
@@ -91,8 +103,9 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Top Navbar */}
-      <header className="flex h-12 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-2">
+      <header className="flex h-12 items-center border-b px-4">
+        {/* Left section */}
+        <div className="flex items-center gap-2 flex-1">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDrawerOpen(true)}>
             <List className="h-4 w-4" />
           </Button>
@@ -101,21 +114,23 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
             <span className="hidden sm:inline">CodeArena</span>
           </Link>
           <div className="ml-4 flex items-center gap-1">
-            <Link href={`/ arena / ${prevProblemId}`}>
-              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={problem.id === "1"}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button onClick={() => {
+              router.push(`/arena/${problemIdList[index - 1] ? problemIdList[index - 1] : problemIdList[index]}`)
+            }} variant="ghost" size="icon" className="h-8 w-8" disabled={problem.id === "1"}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
             <span className="text-sm font-medium px-2">
               {problem.title}
             </span>
-            <Link href={`/ arena / ${nextProblemId}`}>
-              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={problem.id === "15"}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button onClick={() => {
+              router.push(`/arena/${problemIdList[index + 1] ? problemIdList[index + 1] : problemIdList[index]}`)
+            }} variant="ghost" size="icon" className="h-8 w-8" disabled={problem.id === "15"}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
+
+        {/* Center section - Run & Submit */}
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleRun} disabled={isRunning}>
             {isRunning ? "Running..." : "Run"}
@@ -123,6 +138,10 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
           <Button size="sm" onClick={handleSubmit} disabled={isRunning}>
             {isRunning ? "Submitting..." : "Submit"}
           </Button>
+        </div>
+
+        {/* Right section */}
+        <div className="flex items-center gap-2 flex-1 justify-end">
           <Button
             variant="ghost"
             size="icon"
@@ -132,6 +151,38 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {user.image ? user.image : user.name[0].toUpperCase()}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-xs text-muted-foreground leading-none">{user.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -139,14 +190,14 @@ export function ArenaLayout({ problem }: { problem: ProblemDetail }) {
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal">
           {/* Left Panel - Problem Description */}
-          <ResizablePanel defaultSize={40} minSize={25}>
+          <ResizablePanel defaultSize={50} minSize={25}>
             <ProblemDescription problem={problem} />
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
           {/* Right Panel - Code Editor + Test Cases */}
-          <ResizablePanel defaultSize={60} minSize={35}>
+          <ResizablePanel defaultSize={50} minSize={35}>
             <ResizablePanelGroup direction="vertical">
               {/* Code Editor */}
               <ResizablePanel defaultSize={60} minSize={30}>

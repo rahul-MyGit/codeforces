@@ -1,10 +1,16 @@
 import { notFound } from "next/navigation"
+import { cookies } from "next/headers"
 import { ArenaLayout } from "../../../../../components/arena/arena-layout"
-import { getProblemPrettified, getSpecificProblem } from "../../../../../lib/utils";
+import { getProblemPrettified, getProblemsList, getSpecificProblem, getUser } from "../../../../../lib/utils";
 
 export default async function ArenaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const getProblem = (await getSpecificProblem(id)).data;
+  const cookieStore = await cookies();
+  const [getProblem, problemsList, userRes] = await Promise.all([
+    getSpecificProblem(id).then(r => r.data),
+    getProblemsList(id),
+    getUser(cookieStore),
+  ]);
   const problem = getProblemPrettified(getProblem);
 
 
@@ -12,6 +18,6 @@ export default async function ArenaPage({ params }: { params: Promise<{ id: stri
     notFound()
   }
 
-  return <ArenaLayout problem={problem} />
+  return <ArenaLayout problem={problem} problemIdList={problemsList.problems} index={problemsList.index} user={userRes.data.user} />
 }
 

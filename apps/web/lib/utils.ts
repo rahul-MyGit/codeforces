@@ -103,3 +103,8 @@ export function processJudge0Response(
     }
   })
 }
+
+export async function getProblemsList(cursor: string) {
+  const problems = await axios.get(`${BASE_URL}/api/user/problems/problemsList/${cursor}`);
+  return problems.data;
+}
