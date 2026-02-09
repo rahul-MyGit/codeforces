@@ -14,7 +14,13 @@ userProblemRouter.get("/", async (req: Request, res: Response) => {
     headers: fromNodeHeaders(req.headers),
   });
   if (!session) {
-    problems = await getProblemsUnauthenticated(cursor);
+    const fromDbPorblems = await getProblemsUnauthenticated(cursor);
+    problems = fromDbPorblems.map(x => {
+      return {
+        ...x,
+        submission: []
+      }
+    })
   } else {
     problems = await getProblemsAuthenticated(cursor, session.user.id);
   }

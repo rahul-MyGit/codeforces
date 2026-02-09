@@ -54,7 +54,8 @@ export async function getProblemsUnauthenticated(cursor: string | undefined) {
         memoryTimeLimit: false,
         visibleTestCases: false,
         hiddenTestCases: false,
-        userId: false
+        userId: false,
+        submission: false,
       }
     }) : problems = await prisma.problems.findMany({
       take: 15,

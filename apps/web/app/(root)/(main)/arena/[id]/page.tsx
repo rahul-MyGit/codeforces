@@ -6,11 +6,15 @@ import { getProblemPrettified, getProblemsList, getSpecificProblem, getUser } fr
 export default async function ArenaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const cookieStore = await cookies();
-  const [getProblem, problemsList, userRes] = await Promise.all([
+  let user = undefined;
+  const [getProblem, problemsList] = await Promise.all([
     getSpecificProblem(id).then(r => r.data),
     getProblemsList(id),
-    getUser(cookieStore),
   ]);
+  try {
+    const userRes = await getUser(cookieStore);
+    user = userRes.data?.user;
+  } catch {}
   const problem = getProblemPrettified(getProblem);
 
 
@@ -18,6 +22,6 @@ export default async function ArenaPage({ params }: { params: Promise<{ id: stri
     notFound()
   }
 
-  return <ArenaLayout problem={problem} problemIdList={problemsList.problems} index={problemsList.index} user={userRes.data.user} />
+  return <ArenaLayout problem={problem} problemIdList={problemsList.problems} index={problemsList.index} user={user} />
 }
 

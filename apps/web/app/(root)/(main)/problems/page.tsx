@@ -11,7 +11,11 @@ export default async function ProblemsPage() {
   //INFO: had to send cookies since from server doesn't reach the backend
   const problems = await getProblems(cookieStore);
   const tags = await getAllTags();
-  const user = await getUser(cookieStore);
+  let user = undefined;
+  try {
+    const res = await getUser(cookieStore);
+    user = res.data?.user;
+  } catch {}
   const actualTags = tags.data.allTags.map((x: any) => x.title);
   const newProblems: Problem[] = problems.data.problems.map((x: any, index: number) => {
     return {
@@ -27,7 +31,7 @@ export default async function ProblemsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={user.data.user} />
+      <Navbar user={user} />
       <main className="container max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="relative mb-8 p-6 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 border border-primary/10 overflow-hidden">
