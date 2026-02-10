@@ -72,8 +72,20 @@ judge0Router.post("/execute", async (req: Request, res: Response) => {
     const judge0Response = await axios.post(`${JUDGE0_BASE_URL}/submissions/batch/?base64_encoded=false`, {
       submissions: toJudge0
     });
+    const submission = await prisma.submission.create({
+      data: {
+        code,
+        language,
+        status: "ATTEMPTED",
+        problemId,
+        userId: session.user.id,
+      }
+    })
 
-    res.json(judge0Response.data);
+    res.json({
+      juege0: judge0Response.data,
+      submissionId: submission.id
+    });
   } catch (err) {
     res.status(500).json({
       msg: "something went wrong"
@@ -88,40 +100,23 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
   if (!session) return unauthorized(res);
 
   const tokens = req.query.tokens;
+  const submissionId = req.query.submissionId as string;
   const type = req.query.type;
-  if (!tokens || !type) return invalidInputs(res);
+  if (!tokens || !type || !submissionId) return invalidInputs(res);
 
   try {
     const judge0Response = await axios.get(`${JUDGE0_BASE_URL}/submissions/batch?tokens=${tokens}`);
 
-    /*
-    if (type == "submit") {
-      await prisma.submission.upsert({
-        where: {
-          userId: session.user.id,
-          problemId: "ASdf"
-        },
-        update: {
-code         
-language     
-status       
-resultVerdict
-problemId    
-userId
-        },
-        create: {
-code         
-language     
-status       
-resultVerdict
-problemId    
-userId
-        }
-      });
-    }
-      
-      */
 
+    // process submission
+    const submission = await prisma.submission.update({
+      where: {
+        id: submissionId
+      },
+      data: {
+
+      }
+    })
     res.json({
       judge0Response: judge0Response.data
     })

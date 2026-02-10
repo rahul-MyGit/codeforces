@@ -125,8 +125,6 @@ model Submission {
   problem       Problems       @relation(fields: [problemId], references: [id], onDelete: Cascade)
   userId        String
   user          User           @relation(fields: [userId], references: [id])
-
-  @@unique([problemId, userId])
 }
 
 model VisibleTestCases {

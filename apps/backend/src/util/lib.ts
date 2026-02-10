@@ -1,5 +1,6 @@
 import prisma from "@repo/database/client";
 import { Response } from "express";
+import { TestCase, TestCaseVerdict } from "./type";
 
 export function invalidInputs(res: Response) {
   return res.status(400).json({
@@ -181,4 +182,38 @@ export function languageTolanguageId(language: string) {
     default:
       throw new Error(`Unsupported language: ${language}`);
   }
+}
+
+
+
+function statusIdToVerdict(id: number): TestCaseVerdict {
+  if (id === 3) return "accepted"
+  if (id === 4) return "wrong_answer"
+  if (id === 5) return "tle"
+  if (id === 6) return "compilation_error"
+  if (id >= 7 && id <= 12) return "runtime_error"
+  return "internal_error"
+}
+
+export function processJudge0Response(
+  submissions: any[],
+  currentTestCases: TestCase[]
+): TestCase[] {
+  return currentTestCases.map((tc, i) => {
+    const sub = submissions[i]
+    if (!sub) return tc
+
+    const verdict = statusIdToVerdict(sub.status.id)
+
+    return {
+      ...tc,
+      verdict,
+      status: verdict === "accepted" ? "passed" as const : "failed" as const,
+      actualOutput: sub.stdout ?? undefined,
+      stderr: sub.stderr ?? undefined,
+      compileOutput: sub.compile_output ?? undefined,
+      time: sub.time ?? undefined,
+      memory: sub.memory ?? undefined,
+    }
+  })
 }

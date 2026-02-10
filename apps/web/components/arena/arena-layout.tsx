@@ -58,15 +58,14 @@ export function ArenaLayout({ problem, problemIdList, index, user }: { problem: 
       const tokens = await axios.post(`${BASE_URL}/api/judge0/execute`, submissionObj, {
         withCredentials: true
       });
-
       let actualTokens = "";
-      tokens.data.forEach((x: any) => {
+      tokens.data.juege0.forEach((x: any) => {
         actualTokens += `,${x.token}`
       });
       try {
         const poolResponse: any = await new Promise(async (resolve, regect) => {
           const interval = setInterval(async () => {
-            const result = await axios.get(`${BASE_URL}/api/judge0/submission?tokens=${actualTokens.substring(1)}&type=${type}`, { withCredentials: true });
+            const result = await axios.get(`${BASE_URL}/api/judge0/submission?tokens=${actualTokens.substring(1)}&type=${type}&submissionId=${tokens.data.submissionId}`, { withCredentials: true });
             const arr = result.data.judge0Response.submissions;
             const status = arr.find((x: any) => {
               if (x.status.id == 1 || x.status.id == 2) {
@@ -96,9 +95,6 @@ export function ArenaLayout({ problem, problemIdList, index, user }: { problem: 
   const handleSubmit = async () => {
     await handleRunFor("submit");
   }
-
-  const prevProblemId = String(Math.max(1, Number(problem.id) - 1))
-  const nextProblemId = String(Math.min(15, Number(problem.id) + 1))
 
   return (
     <div className="flex h-screen flex-col bg-background">
