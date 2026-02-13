@@ -7,6 +7,7 @@ import { userProblemRouter } from "./router/userProblemsRouter";
 import { tagsRouter } from "./router/tagsRouter";
 import { judge0Router } from "./router/judge0Router";
 import { pubSubClient, redisClient } from "./redis/client";
+import { submissionRouter } from "./router/submissionsRouter";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -44,6 +45,7 @@ app.use("/api/admin/problems", adminProblemRouter);
 app.use("/api/user/problems", userProblemRouter);
 app.use("/api/tags", tagsRouter);
 app.use("/api/judge0", judge0Router);
+app.use("/api/submissions", submissionRouter);
 
 async function main() {
   await redisClient.connect();

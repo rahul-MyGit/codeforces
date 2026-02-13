@@ -62,16 +62,17 @@ judge0Router.post("/execute", async (req: Request, res: Response) => {
   let toJudge0 = test.map((x: any) => {
     return {
       language_id,
-      source_code: code,
-      stdin: x.input,
-      expected_output: x.output
+      source_code: Buffer.from(code).toString("base64"),
+      stdin: Buffer.from(x.input).toString("base64"),
+      expected_output: Buffer.from(x.output).toString("base64")
     }
   });
 
   try {
-    const judge0Response = await axios.post(`${JUDGE0_BASE_URL}/submissions/batch/?base64_encoded=false`, {
+    const judge0Response = await axios.post(`${JUDGE0_BASE_URL}/submissions/batch/?base64_encoded=true`, {
       submissions: toJudge0
     });
+
     const submission = await prisma.submission.create({
       data: {
         code,
@@ -83,7 +84,7 @@ judge0Router.post("/execute", async (req: Request, res: Response) => {
     })
 
     res.json({
-      juege0: judge0Response.data,
+      judge0: judge0Response.data,
       submissionId: submission.id
     });
   } catch (err) {
@@ -105,22 +106,58 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
   if (!tokens || !type || !submissionId) return invalidInputs(res);
 
   try {
-    const judge0Response = await axios.get(`${JUDGE0_BASE_URL}/submissions/batch?tokens=${tokens}`);
+    const judge0Response = await axios.get(`${JUDGE0_BASE_URL}/submissions/batch?tokens=${tokens}&base64_encoded=true`);
+    let isProcessing = false;
 
 
-    // process submission
-    const submission = await prisma.submission.update({
-      where: {
-        id: submissionId
-      },
-      data: {
-
+    judge0Response.data.submissions.forEach((x: any) => {
+      if (x.status.description == "Processing") {
+        isProcessing = true;
       }
-    })
+    });
+
+    if (!isProcessing) {
+      let resultVerdict = "";
+
+      for (const x of judge0Response.data.submissions) {
+        if (x.status.description == "Accepted") {
+          continue;
+        } else {
+          resultVerdict = x.status.description;
+          break;
+        }
+      }
+      if (resultVerdict == "") {
+        resultVerdict = "ACCEPTED"
+      } else {
+        if (resultVerdict == "Wrong Answer") {
+          resultVerdict = "WRONG_ANSWER";
+        } else if (resultVerdict == "Time Limit Exceeded") {
+          resultVerdict = "TIME_LIMIT_EXCEEDED";
+        } else if (resultVerdict == "Memory Limit Exceeded") {
+          resultVerdict = "MEMORY_LIMIT_EXCEEDED";
+        } else if (resultVerdict.startsWith("Runtime Error")) {
+          resultVerdict = "RUNTIME_ERROR";
+        } else if (resultVerdict == "Compilation Error") {
+          resultVerdict = "COMPILATION_ERROR";
+        }
+      }
+
+      await prisma.submission.update({
+        where: {
+          id: submissionId
+        },
+        data: {
+          //@ts-ignore
+          resultVerdict
+        }
+      })
+    }
     res.json({
-      judge0Response: judge0Response.data
+      judge0Response: judge0Response.data,
     })
   } catch (err) {
+    console.log(err);
     res.status(500).json({
       msg: "something went wrong"
     });

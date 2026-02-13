@@ -59,7 +59,7 @@ export function ArenaLayout({ problem, problemIdList, index, user }: { problem: 
         withCredentials: true
       });
       let actualTokens = "";
-      tokens.data.juege0.forEach((x: any) => {
+      tokens.data.judge0.forEach((x: any) => {
         actualTokens += `,${x.token}`
       });
       try {

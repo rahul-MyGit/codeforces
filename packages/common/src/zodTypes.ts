@@ -72,7 +72,7 @@ export const submissionSchema = z.object({
     "JAVA"
   ]),
   code: z.string(),
-  type: z.enum(["run", "submit"]),
+  type: z.enum(["run", "submit"])
 });
 
 export const tagsSchema = z.object({
