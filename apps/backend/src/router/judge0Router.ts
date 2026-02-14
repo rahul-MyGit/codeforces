@@ -73,21 +73,36 @@ judge0Router.post("/execute", async (req: Request, res: Response) => {
       submissions: toJudge0
     });
 
-    const submission = await prisma.submission.create({
-      data: {
-        code,
-        language,
-        status: "ATTEMPTED",
-        problemId,
-        userId: session.user.id,
-      }
-    })
+    let submission;
+    if (type == "submit") {
+      submission = await prisma.submission.create({
+        data: {
+          code,
+          language,
+          status: "ATTEMPTED",
+          problemId,
+          userId: session.user.id,
+        }
+      })
+    }
 
-    res.json({
-      judge0: judge0Response.data,
-      submissionId: submission.id
-    });
+    if (submission) {
+
+      res.json({
+        judge0: judge0Response.data,
+        submissionId: submission!.id
+      });
+
+    } else {
+
+      res.json({
+        judge0: judge0Response.data,
+        submissionId: null
+      });
+
+    }
   } catch (err) {
+    console.log("execute error ", err);
     res.status(500).json({
       msg: "something went wrong"
     });
@@ -101,9 +116,9 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
   if (!session) return unauthorized(res);
 
   const tokens = req.query.tokens;
-  const submissionId = req.query.submissionId as string;
+  const submissionId = req.query.submissionId as string | undefined;
   const type = req.query.type;
-  if (!tokens || !type || !submissionId) return invalidInputs(res);
+  if (!tokens || !type) return invalidInputs(res);
 
   try {
     const judge0Response = await axios.get(`${JUDGE0_BASE_URL}/submissions/batch?tokens=${tokens}&base64_encoded=true`);
@@ -111,7 +126,7 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
 
 
     judge0Response.data.submissions.forEach((x: any) => {
-      if (x.status.description == "Processing") {
+      if (x.status.description == "Processing" || x.status.description == "In Queue") {
         isProcessing = true;
       }
     });
@@ -127,6 +142,8 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
           break;
         }
       }
+
+
       if (resultVerdict == "") {
         resultVerdict = "ACCEPTED"
       } else {
@@ -143,15 +160,17 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
         }
       }
 
-      await prisma.submission.update({
-        where: {
-          id: submissionId
-        },
-        data: {
-          //@ts-ignore
-          resultVerdict
-        }
-      })
+      if (type == "submit") {
+        await prisma.submission.update({
+          where: {
+            id: submissionId
+          },
+          data: {
+            //@ts-ignore
+            resultVerdict
+          }
+        })
+      }
     }
     res.json({
       judge0Response: judge0Response.data,

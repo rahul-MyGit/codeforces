@@ -154,7 +154,7 @@ export function TestCasesPanel({ testCases, activeTab, onTabChange, isRunning }:
                         Compilation Error
                       </div>
                       <div className="rounded-md bg-muted p-3 font-mono text-sm text-destructive">
-                        <pre className="whitespace-pre-wrap">{selected.compileOutput || "Compilation failed"}</pre>
+                        <pre className="whitespace-pre-wrap">{Buffer.from(selected.compileOutput as string, "base64").toString("utf-8") || "Compilation failed"}</pre>
                       </div>
                     </div>
                   ) : (
