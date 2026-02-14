@@ -15,6 +15,7 @@
   },
   "exports": {
     "./zodTypes": "./src/zodTypes.ts",
+    "./types": "./src/types.ts",
     "./consts": "./src/consts.ts"
   }
 }

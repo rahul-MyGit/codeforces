@@ -108,3 +108,18 @@ export async function getProblemsList(cursor: string) {
   const problems = await axios.get(`${BASE_URL}/api/user/problems/problemsList/${cursor}`);
   return problems.data;
 }
+
+export async function getProblemStatus(cookieStore: any) {
+  const cookieHeader = Array.from(cookieStore._parsed.values())
+    .map(({ name, value }: any) => {
+      return `${name}=${encodeURIComponent(value)}`;
+    })
+    .join("; ");
+
+  const res = await axios.get(`${BASE_URL}/api/user/problems/progress-widget`, {
+    headers: {
+      "cookie": cookieHeader
+    }
+  });
+  return res.data;
+}

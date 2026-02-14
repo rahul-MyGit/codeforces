@@ -1,4 +1,5 @@
 import prisma from "@repo/database/client";
+import { ProblemStats } from "@repo/common/types";
 import { Router, Request, Response } from "express";
 import { getProblemsAuthenticated, getProblemsUnauthenticated, invalidInputs, noProblemId } from "../util/lib";
 import { auth } from "../util/auth";
@@ -105,6 +106,109 @@ userProblemRouter.get("/problemsList/:id", async (req: Request, res: Response) =
   })
 });
 
+
+userProblemRouter.get("/progress-widget", async (req: Request, res: Response) => {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+
+  let data: ProblemStats;
+
+  const [totalEasy, totalMedium, totalHard] = await prisma.$transaction([
+    prisma.problems.count({
+      where: {
+        problemType: "EASY"
+      }
+    }),
+    prisma.problems.count({
+      where: {
+        problemType: "MEDIUM"
+      }
+    }),
+    prisma.problems.count({
+      where: {
+        problemType: "HARD"
+      }
+    }),
+  ]);
+
+  if (!session) {
+    data = {
+      easy: {
+        total: totalEasy,
+        solved: 0,
+      },
+
+      medium: {
+        total: totalMedium,
+        solved: 0,
+      },
+
+      hard: {
+        total: totalHard,
+        solved: 0,
+      }
+    }
+  } else {
+    const [totalEasySolved, totalMediumSolved, totalHardSolved] = await prisma.$transaction([
+      prisma.problems.count({
+        where: {
+          problemType: "EASY",
+          submission: {
+            some: {
+              userId: session.user.id,
+              status: "SOLVED",
+            },
+          },
+        },
+      }),
+      prisma.problems.count({
+        where: {
+          problemType: "MEDIUM",
+          submission: {
+            some: {
+              userId: session.user.id,
+              status: "SOLVED",
+            },
+          },
+        },
+      }),
+      prisma.problems.count({
+        where: {
+          problemType: "HARD",
+          submission: {
+            some: {
+              userId: session.user.id,
+              status: "SOLVED",
+            },
+          },
+        },
+      }),
+    ]);
+
+    data = {
+      easy: {
+        total: totalEasy,
+        solved: totalEasySolved,
+      },
+
+      medium: {
+        total: totalMedium,
+        solved: totalMediumSolved,
+      },
+
+      hard: {
+        total: totalHard,
+        solved: totalHardSolved,
+      }
+    }
+  }
+  res.json({
+    data
+  });
+});
+
+
 userProblemRouter.get("/:problemId", async (req: Request, res: Response) => {
   const problemId = req.params.problemId as string;
   if (!problemId) return noProblemId(res);
@@ -148,3 +252,4 @@ userProblemRouter.get("/:problemId", async (req: Request, res: Response) => {
     })
   }
 });
+
