@@ -167,7 +167,8 @@ judge0Router.get("/submission", async (req: Request, res: Response) => {
           },
           data: {
             //@ts-ignore
-            resultVerdict
+            resultVerdict,
+            status: resultVerdict == "ACCEPTED" ? "SOLVED" : "ATTEMPTED"
           }
         })
       }

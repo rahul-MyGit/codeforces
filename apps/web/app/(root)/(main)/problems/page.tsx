@@ -8,14 +8,14 @@ import { Problem } from "../../../../lib/temp";
 
 export default async function ProblemsPage() {
   const cookieStore = await cookies();
-  //INFO: had to send cookies since from server doesn't reach the backend
+  // INFO: Cookies are added explicitly since the server does not forward them to the backend service.
   const problems = await getProblems(cookieStore);
   const tags = await getAllTags();
   let user = undefined;
   try {
     const res = await getUser(cookieStore);
     user = res.data?.user;
-  } catch {}
+  } catch { }
   const actualTags = tags.data.allTags.map((x: any) => x.title);
   const newProblems: Problem[] = problems.data.problems.map((x: any, index: number) => {
     return {
@@ -24,7 +24,7 @@ export default async function ProblemsPage() {
       title: x.title,
       difficulty: x.problemType,
       tags: x.tags.map((y: any) => y.title),
-      status: x.submission.length == 0 ? "UNSOLVED" : x.submission[0].status
+      status: x.submission.length == 0 ? "UNSOLVED" : x.submission[x.submission.length - 1].status
     }
   });
 
