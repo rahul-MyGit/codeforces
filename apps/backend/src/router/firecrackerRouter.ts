@@ -1,3 +1,4 @@
+/*
 import { submissionSchema } from "@repo/common/zodTypes";
 import { FIRE_CRACKER_QUEUE } from "@repo/common/consts";
 import { Router, Request, Response } from "express";
@@ -21,3 +22,4 @@ firecrackerRouter.post("/submit/firecracker", (req: Request, res: Response) => {
 
   redisClient.lPush(FIRE_CRACKER_QUEUE, JSON.stringify(parsedData.data));
 });
+*/

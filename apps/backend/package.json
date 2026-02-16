@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@repo/common": "workspace:*",
@@ -24,9 +26,13 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "redis": "^5.10.0",
+    "typescript": "^5.9.3",
     "uuid": "^13.0.0"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "tsup": "^8.5.1"
+  }
 }

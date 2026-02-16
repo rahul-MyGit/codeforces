@@ -6,7 +6,6 @@ import { auth } from "./util/auth";
 import { userProblemRouter } from "./router/userProblemsRouter";
 import { tagsRouter } from "./router/tagsRouter";
 import { judge0Router } from "./router/judge0Router";
-import { pubSubClient, redisClient } from "./redis/client";
 import { submissionRouter } from "./router/submissionsRouter";
 
 const app = express();
@@ -48,10 +47,12 @@ app.use("/api/judge0", judge0Router);
 app.use("/api/submissions", submissionRouter);
 
 async function main() {
+  /*
   await redisClient.connect();
   console.log("connected to redis client");
   await pubSubClient.connect();
   console.log("connected to pub sub client");
+   * */
   app.listen(port, () => {
     console.log(`server running on port ${port}`);
   });
