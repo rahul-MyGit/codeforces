@@ -5,6 +5,7 @@ import sendEmailViaNodemailer from './sendViaNodemailer';
 import { ResendEmailOptions } from './resend/types';
 
 config({ path: "/home/nagmani/root/projects/codeforces/packages/email/.env" });
+config({ path: "/home/nagmani/root/projects/codeforces/packages/email/.env" });
 
 
 export const resend = (process.env.RESEND_API_KEY) ? new Resend(process.env.RESEND_API_KEY) : null;
